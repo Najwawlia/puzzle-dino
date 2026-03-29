@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Puzzle - Multi Level</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* --- CSS STYLING --- */
+        body {
+            font-family: 'Poppins', Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f8e1eb; /* Light pink background yang lebih cerah */
+            margin: 0;
+            overflow: hidden; /* Mengatasi potensi scrollbar jika ada elemen fixed */
+        }
+
+        .game-container {
+            background-color: #fffafc; /* White-pink yang sangat lembut */
+            padding: 30px;
+            border-radius: 20px; /* Sudut lebih membulat */
+            box-shadow: 0 10px 30px rgba(255, 105, 180, 0.25); /* Bayangan halus */
+            text-align: center;
+            border: 1px solid #ffccdd; /* Border pink lembut */
+            max-width: 90%;
+            box-sizing: border-box;
+            display: flex; /* Menggunakan flexbox untuk tata letak internal */
+            flex-direction: column; /* Susun elemen secara vertikal */
+            align-items: center; /* Pusatkan secara horizontal */
+        }
+
+        h1 {
+            color: #d81b60; /* Deep pink yang konsisten */
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(255, 192, 203, 0.6); /* Bayangan teks */
+            font-size: 2.5em; /* Ukuran judul lebih besar */
+        }
+
+        .controls {
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px; /* Jarak antar kontrol */
+        }
+
+        .controls button {
+            padding: 12px 28px;
+            font-size: 1.1em;
+            cursor: pointer;
+            border: none;
+            border-radius: 30px; /* Bentuk pil */
+            background-color: #ff4081; /* Pink cerah */
+            color: white;
+            font-weight: 600;
+            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+            box-shadow: 0 6px 15px rgba(255, 64, 129, 0.3); /* Bayangan tombol */
+            letter-spacing: 0.5px;
+        }
+
+        .controls button:hover {
+            background-color: #e91e63; /* Pink lebih gelap saat hover */
+            transform: translateY(-3px); /* Efek angkat */
+            box-shadow: 0 8px 20px rgba(255, 64, 129, 0.4); /* Bayangan lebih kuat */
+        }
+
+        /* Container baru untuk waktu dan rekor */
+        .time-info-container {
+            display: flex;
+            justify-content: center;
+            gap: 20px; /* Jarak antara waktu dan rekor */
+            margin-top: 25px; /* Margin atas untuk memisahkan dari area puzzle */
+            flex-wrap: wrap;
+        }
+
+        #timerDisplay, #fastestTimeDisplay {
+            font-size: 1.4em;
+            font-weight: 700;
+            color: #c2185b; /* Darker pink */
+            background-color: #ffebee;
+            padding: 10px 20px;
+            border-radius: 10px;
+            box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.08); /* Bayangan inset lembut */
+            min-width: 150px;
+            text-align: center;
+        }
+
+        .puzzle-area {
+            display: flex;
+            justify-content: center;
+            gap: 30px; /* Jarak antar area puzzle */
+            margin-top: 30px;
+            flex-wrap: wrap;
+        }
+
+        .puzzle-board {
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            grid-template-rows: repeat(3, 100px);
+            width: 300px;
+            height: 300px;
+            border: 4px solid #ff99bb; /* Border tebal */
+            background-color: #fffafa; /* Floral white */
+            box-shadow: inset 0 0 15px rgba(255, 192, 203, 0.6); /* Bayangan inset kuat */
+            border-radius: 8px;
+        }
+
+        .puzzle-slot {
+            width: 100px;
+            height: 100px;
+            border: 1px dashed #ff80ab; /* Medium pink dashed border */
+            box-sizing: border-box;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: rgba(255, 192, 203, 0.1); /* Tint transparan */
+            transition: border-color 0.2s ease, background-color 0.2s ease;
+        }
+
+        .puzzle-slot.highlight {
+            border: 2px solid #42a5f5; /* Warna biru untuk highlight */
+            background-color: rgba(66, 165, 245, 0.1);
+        }
+
+        .puzzle-pieces-container {
+            display: flex;
+            flex-wrap: wrap;
+            width: 330px; /* Cukup lebar untuk padding dan gap */
+            height: 330px;
+            border: 4px dashed #ff69b4; /* Hot pink dashed border */
+            background-color: #fff0f5; /* Very light pink background */
+            padding: 15px; /* Padding lebih besar */
+            box-sizing: border-box;
+            align-content: flex-start;
+            gap: 10px; /* Jarak antar potongan */
+            justify-content: center;
+            box-shadow: 0 0 15px rgba(255, 105, 180, 0.2);
+            border-radius: 8px;
+            overflow: hidden; /* **PENTING: Mencegah potongan keluar dari kotak** */
+        }
+
+        .puzzle-piece {
+            width: 96px;
+            height: 96px;
+            background-size: 300px 300px; /* Ukuran gambar latar belakang sesuai total puzzle */
+            border: 2px solid #ff80ab; /* Medium pink border */
+            cursor: grab;
+            position: relative;
+            box-sizing: border-box;
+            transition: transform 0.1s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15); /* Bayangan menonjol */
+            border-radius: 4px; /* Sudut sedikit membulat */
+        }
+
+        .puzzle-piece.dragging {
+            opacity: 0.7; /* Sedikit transparan saat di-drag */
+            cursor: grabbing;
+            z-index: 1000;
+            transform: scale(1.08) rotate(2deg); /* Sedikit membesar dan berputar */
+            box-shadow: 0 10px 25px rgba(255, 105, 180, 0.6); /* Bayangan lebih kuat */
+        }
+
+        .puzzle-piece.placed {
+            cursor: default;
+            border: 3px solid #4caf50; /* Hijau solid */
+            box-shadow: 0 0 12px rgba(76, 175, 80, 0.6);
+            opacity: 1;
+            transform: none; /* Hapus transformasi */
+        }
+
+        .original-image-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 192, 203, 0.95); /* Sedikit lebih opaque */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            display: none;
+            backdrop-filter: blur(5px); /* Efek blur pada latar belakang */
+        }
+
+        .original-image-container img {
+            max-width: 90%;
+            max-height: 80vh;
+            border: 10px solid white; /* Border tebal */
+            box-shadow: 0 10px 30px rgba(255, 105, 180, 0.4);
+            border-radius: 15px;
+        }
+
+        .original-image-container button {
+            margin-top: 30px;
+            padding: 15px 35px;
+            font-size: 1.2em;
+            cursor: pointer;
+            border: none;
+            border-radius: 30px;
+            background-color: #ff4081;
+            color: white;
+            font-weight: 600;
+            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+            box-shadow: 0 6px 15px rgba(255, 64, 129, 0.3);
+        }
+
+        .original-image-container button:hover {
+            background-color: #e91e63;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(255, 64, 129, 0.4);
+        }
+
+        .success-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #ffebee; /* Light pink */
+            color: #880e4f;
+            padding: 45px;
+            border-radius: 20px;
+            box-shadow: 0 15px 40px rgba(255, 105, 180, 0.5); /* Bayangan menonjol */
+            text-align: center;
+            z-index: 1001;
+            display: none;
+            border: 3px solid #e91e63; /* Deep pink border */
+            max-width: 90%;
+            box-sizing: border-box;
+            animation: fadeInScale 0.5s ease-out forwards; /* Animasi muncul */
+        }
+
+        .success-message h2 {
+            margin-top: 0;
+            color: #d81b60;
+            font-size: 2.2em;
+            margin-bottom: 20px;
+        }
+
+        .success-message p {
+            font-size: 1.5em;
+            margin-bottom: 25px;
+            color: #ad1457;
+            line-height: 1.4;
+        }
+
+        .success-message .message-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 20px; /* Jarak antar tombol */
+            margin-top: 25px;
+        }
+
+        .success-message button {
+            padding: 14px 30px;
+            font-size: 1.1em;
+            cursor: pointer;
+            border: none;
+            border-radius: 30px;
+            background-color: #e91e63; /* Deep pink */
+            color: white;
+            font-weight: 600;
+            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+            box-shadow: 0 5px 12px rgba(233, 30, 99, 0.3);
+        }
+
+        .success-message button:hover {
+            background-color: #c2185b;
+            transform: translateY(-3px);
+            box-shadow: 0 7px 15px rgba(233, 30, 99, 0.4);
+        }
+
+        /* Animasi */
+        @keyframes fadeInScale {
+            from {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.8);
+            }
+            to {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1);
+            }
+        }
+
+        /* Responsiveness */
+        @media (max-width: 768px) {
+            .game-container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 2em;
+            }
+
+            .controls {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .controls button, .original-image-container button, .success-message button {
+                width: 100%;
+                padding: 10px 20px;
+                font-size: 1em;
+            }
+
+            .time-info-container {
+                flex-direction: column; /* Tata letak vertikal untuk waktu/rekor */
+                gap: 10px;
+            }
+
+            #timerDisplay, #fastestTimeDisplay {
+                font-size: 1.2em;
+                padding: 6px 12px;
+                min-width: unset;
+            }
+
+            .puzzle-area {
+                flex-direction: column;
+                align-items: center;
+                gap: 20px;
+            }
+
+            .puzzle-board, .puzzle-pieces-container {
+                width: 270px;
+                height: 270px;
+                grid-template-columns: repeat(3, 90px);
+                grid-template-rows: repeat(3, 90px);
+                padding: 10px;
+            }
+
+            .puzzle-piece, .puzzle-slot {
+                width: 86px;
+                height: 86px;
+            }
+
+            .puzzle-piece {
+                background-size: 270px 270px;
+            }
+
+            .success-message {
+                padding: 30px;
+            }
+
+            .success-message h2 {
+                font-size: 1.8em;
+            }
+
+            .success-message p {
+                font-size: 1.2em;
+            }
+
+            .success-message .message-buttons {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>Jigsaw Puzzle Level <span id="currentLevelDisplay">1</span></h1>
+
+        <div class="controls">
+            <button id="startNewGameBtn">Mulai Game Baru</button>
+            <button id="resetLevelBtn">Reset Gambar</button>
+            <button id="showOriginalBtn">Lihat Gambar Asli</button>
+        </div>
+
+        <div class="puzzle-area">
+            <div id="puzzleBoard" class="puzzle-board"></div>
+            <div id="puzzlePiecesContainer" class="puzzle-pieces-container"></div>
+        </div>
+
+        <div class="time-info-container">
+            <div id="timerDisplay">Waktu: 00:00</div>
+            <div id="fastestTimeDisplay">Rekor Tercepat: --:--</div>
+        </div>
+
+        <div id="originalImageContainer" class="original-image-container">
+            <img id="originalImage" src="" alt="Original Puzzle Image">
+            <button id="closeOriginalBtn">Tutup</button>
+        </div>
+
+        <div id="successMessage" class="success-message">
+            <h2>Selamat! Puzzle Level <span id="completedLevelDisplay"></span> Selesai!</h2>
+            <p>Waktu Penyelesaian: <span id="completionTimeDisplay"></span></p>
+            <p id="levelFastestTimeDisplay"></p>
+            <div class="message-buttons">
+                <button id="playAgainBtn">Main Lagi (Level 1)</button>
+                <button id="nextLevelBtn">Lanjut Level Berikutnya</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- JAVASCRIPT LOGIC ---
+        const puzzleBoard = document.getElementById('puzzleBoard');
+        const puzzlePiecesContainer = document.getElementById('puzzlePiecesContainer');
+        const timerDisplay = document.getElementById('timerDisplay');
+        const fastestTimeDisplay = document.getElementById('fastestTimeDisplay');
+        const startNewGameBtn = document.getElementById('startNewGameBtn');
+        const resetLevelBtn = document.getElementById('resetLevelBtn');
+        const showOriginalBtn = document.getElementById('showOriginalBtn');
+        const originalImageContainer = document.getElementById('originalImageContainer');
+        const closeOriginalBtn = document.getElementById('closeOriginalBtn');
+        const successMessage = document.getElementById('successMessage');
+        const completionTimeDisplay = document.getElementById('completionTimeDisplay');
+        const levelFastestTimeDisplay = document.getElementById('levelFastestTimeDisplay');
+        const playAgainBtn = document.getElementById('playAgainBtn');
+        const nextLevelBtn = document.getElementById('nextLevelBtn');
+        const currentLevelDisplay = document.getElementById('currentLevelDisplay');
+        const completedLevelDisplay = document.getElementById('completedLevelDisplay');
+
+        let puzzlePieces = [];
+        let timerInterval;
+        let seconds = 0;
+        let gameActive = false;
+        let draggedPiece = null;
+        let currentDropTarget = null;
+        let timerStarted = false; // Flag to control timer start
+
+        const PUZZLE_IMAGES = [
+            'image1.jpg', // Level 1
+            'image2.jpg', // Level 2
+            'image3.jpg', // Level 3
+            'image4.jpg',
+            'image5.jpg',
+            'image6.jpg',
+            'image7.jpg',
+            'image8.jpg',
+            'image9.jpg',
+            'image10.jpg',
+            // Tambahkan lebih banyak gambar jika Anda ingin lebih banyak level
+        ];
+        let currentLevel = 0;
+
+        const GRID_SIZE = 3;
+        const PIECE_WIDTH = 100;
+        const PIECE_HEIGHT = 100;
+        const TOTAL_IMAGE_WIDTH = GRID_SIZE * PIECE_WIDTH;
+        const TOTAL_IMAGE_HEIGHT = GRID_SIZE * PIECE_HEIGHT;
+
+        // Object to store fastest times for each level
+        let fastestTimes = {};
+
+        /**
+         * Menginisialisasi papan puzzle dengan slot kosong.
+         */
+        function createPuzzleBoard() {
+            puzzleBoard.innerHTML = '';
+            for (let i = 0; i < GRID_SIZE * GRID_SIZE; i++) {
+                const slot = document.createElement('div');
+                slot.classList.add('puzzle-slot');
+                slot.dataset.slotId = i;
+                puzzleBoard.appendChild(slot);
+            }
+        }
+
+        /**
+         * Membuat potongan-potongan puzzle dari gambar asli.
+         */
+        function createPuzzlePieces(imageUrl) {
+            puzzlePiecesContainer.innerHTML = '';
+            puzzlePieces = [];
+            for (let i = 0; i < GRID_SIZE * GRID_SIZE; i++) {
+                const piece = document.createElement('div');
+                piece.classList.add('puzzle-piece');
+                piece.draggable = true;
+                piece.dataset.correctSlotId = i;
+
+                const row = Math.floor(i / GRID_SIZE);
+                const col = i % GRID_SIZE;
+
+                const bgPosX = -(col * PIECE_WIDTH);
+                const bgPosY = -(row * PIECE_HEIGHT);
+
+                piece.style.backgroundImage = `url(${imageUrl})`;
+                piece.style.backgroundSize = `${TOTAL_IMAGE_WIDTH}px ${TOTAL_IMAGE_HEIGHT}px`;
+                piece.style.backgroundPosition = `${bgPosX}px ${bgPosY}px`;
+
+                puzzlePieces.push(piece);
+            }
+            shufflePuzzlePieces();
+        }
+
+        /**
+         * Mengacak posisi potongan puzzle di dalam container.
+         */
+        function shufflePuzzlePieces() {
+            for (let i = puzzlePieces.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [puzzlePieces[i], puzzlePieces[j]] = [puzzlePieces[j], puzzlePieces[i]];
+            }
+
+            // Hapus semua potongan dari board sebelum memasang kembali ke container
+            document.querySelectorAll('.puzzle-slot').forEach(slot => {
+                while (slot.firstChild) {
+                    slot.removeChild(slot.firstChild);
+                }
+            });
+
+            puzzlePieces.forEach(piece => {
+                puzzlePiecesContainer.appendChild(piece);
+                piece.classList.remove('placed');
+                piece.draggable = true;
+            });
+        }
+
+        /**
+         * Menginisialisasi ulang game untuk level saat ini.
+         */
+        function startGame() {
+            gameActive = true;
+            seconds = 0;
+            timerDisplay.textContent = 'Waktu: 00:00';
+            clearInterval(timerInterval);
+            timerStarted = false; // Reset timerStarted flag
+
+            const currentImageUrl = PUZZLE_IMAGES[currentLevel];
+            originalImage.src = currentImageUrl;
+            currentLevelDisplay.textContent = currentLevel + 1;
+
+            createPuzzleBoard();
+            createPuzzlePieces(currentImageUrl);
+            addDragDropListeners();
+            loadFastestTime(currentLevel); // Load fastest time for the current level
+
+            originalImageContainer.style.display = 'none';
+            successMessage.style.display = 'none';
+        }
+
+        /**
+         * Mereset puzzle untuk level saat ini.
+         * Hanya mengacak ulang potongan tanpa mereset timer atau level.
+         */
+        function resetCurrentLevel() {
+            gameActive = true; // Ensure game is active when resetting
+            seconds = 0;
+            timerDisplay.textContent = 'Waktu: 00:00';
+            clearInterval(timerInterval);
+            timerStarted = false; // Reset timerStarted flag
+            shufflePuzzlePieces();
+        }
+
+        /**
+         * Memperbarui tampilan timer setiap detik.
+         */
+        function updateTimer() {
+            seconds++;
+            timerDisplay.textContent = `Waktu: ${formatTime(seconds)}`;
+        }
+
+        /**
+         * Memformat waktu dari detik ke format MM:SS.
+         */
+        function formatTime(totalSeconds) {
+            const minutes = Math.floor(totalSeconds / 60);
+            const remainingSeconds = totalSeconds % 60;
+            const formattedMinutes = String(minutes).padStart(2, '0');
+            const formattedSeconds = String(remainingSeconds).padStart(2, '0');
+            return `${formattedMinutes}:${formattedSeconds}`;
+        }
+
+        /**
+         * Menambahkan event listener drag-and-drop.
+         */
+        function addDragDropListeners() {
+            puzzlePieces.forEach(piece => {
+                piece.addEventListener('dragstart', (e) => {
+                    if (!gameActive || piece.classList.contains('placed')) {
+                        e.preventDefault();
+                        return;
+                    }
+                    draggedPiece = piece;
+                    e.dataTransfer.setData('text/plain', piece.dataset.correctSlotId);
+                    piece.classList.add('dragging');
+                });
+
+                piece.addEventListener('dragend', () => {
+                    if (draggedPiece) {
+                        draggedPiece.classList.remove('dragging');
+                    }
+                    if (currentDropTarget) {
+                        currentDropTarget.style.border = '1px dashed #ff80ab';
+                        currentDropTarget.classList.remove('highlight');
+                    }
+                    draggedPiece = null;
+                    currentDropTarget = null;
+                });
+            });
+
+            document.querySelectorAll('.puzzle-slot').forEach(slot => {
+                slot.addEventListener('dragenter', (e) => {
+                    e.preventDefault();
+                    if (slot.children.length === 0) {
+                        slot.classList.add('highlight');
+                        currentDropTarget = slot;
+                    }
+                });
+
+                slot.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                });
+
+                slot.addEventListener('dragleave', () => {
+                    if (currentDropTarget === slot) {
+                        currentDropTarget.classList.remove('highlight');
+                        currentDropTarget = null;
+                    }
+                });
+
+                slot.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    if (draggedPiece && currentDropTarget === slot && slot.children.length === 0) {
+                        // Mulai timer pada drop pertama yang berhasil
+                        if (!timerStarted) {
+                            timerInterval = setInterval(updateTimer, 1000);
+                            timerStarted = true;
+                        }
+
+                        // Hapus dari induk sebelumnya jika sudah ditempatkan
+                        if (draggedPiece.parentElement && draggedPiece.parentElement.classList.contains('puzzle-slot')) {
+                            draggedPiece.parentElement.removeChild(draggedPiece);
+                        } else if (draggedPiece.parentElement === puzzlePiecesContainer) {
+                             puzzlePiecesContainer.removeChild(draggedPiece);
+                        }
+                        
+                        slot.appendChild(draggedPiece);
+                        draggedPiece.classList.add('placed');
+                        draggedPiece.draggable = false;
+                        slot.classList.remove('highlight');
+
+                        checkPuzzleCompletion();
+                    } else {
+                        if (currentDropTarget) {
+                            currentDropTarget.classList.remove('highlight');
+                        }
+                    }
+                    draggedPiece = null;
+                    currentDropTarget = null;
+                });
+            });
+        }
+
+        /**
+         * Memuat waktu tercepat untuk level tertentu dari local storage.
+         */
+        function loadFastestTime(levelIndex) {
+            const storedTime = localStorage.getItem(`fastestTime_level_${levelIndex}`);
+            if (storedTime) {
+                fastestTimes[levelIndex] = parseInt(storedTime);
+                fastestTimeDisplay.textContent = `Rekor Tercepat: ${formatTime(fastestTimes[levelIndex])}`;
+            } else {
+                fastestTimes[levelIndex] = null;
+                fastestTimeDisplay.textContent = 'Rekor Tercepat: --:--';
+            }
+        }
+
+        /**
+         * Menyimpan waktu tercepat untuk level tertentu ke local storage.
+         */
+        function saveFastestTime(levelIndex, timeInSeconds) {
+            if (fastestTimes[levelIndex] === null || timeInSeconds < fastestTimes[levelIndex]) {
+                fastestTimes[levelIndex] = timeInSeconds;
+                localStorage.setItem(`fastestTime_level_${levelIndex}`, timeInSeconds);
+            }
+        }
+
+        /**
+         * Memeriksa apakah semua potongan puzzle sudah ditempatkan dengan benar.
+         */
+        function checkPuzzleCompletion() {
+            const allPiecesPlaced = Array.from(puzzleBoard.children).every(slot => {
+                const piece = slot.firstElementChild;
+                return piece && parseInt(piece.dataset.correctSlotId) === parseInt(slot.dataset.slotId);
+            });
+
+            if (allPiecesPlaced) {
+                gameActive = false;
+                clearInterval(timerInterval);
+                timerStarted = false;
+                
+                successMessage.style.display = 'block';
+                completionTimeDisplay.textContent = formatTime(seconds);
+                completedLevelDisplay.textContent = currentLevel + 1;
+
+                // Perbarui dan tampilkan rekor waktu tercepat
+                saveFastestTime(currentLevel, seconds);
+                const currentLevelRecord = fastestTimes[currentLevel];
+                if (currentLevelRecord !== null) {
+                    levelFastestTimeDisplay.textContent = `Rekor level ini: ${formatTime(currentLevelRecord)}`;
+                } else {
+                    levelFastestTimeDisplay.textContent = '';
+                }
+
+                if (currentLevel === PUZZLE_IMAGES.length - 1) {
+                    nextLevelBtn.style.display = 'none';
+                    playAgainBtn.textContent = 'Main Lagi (Level 1)';
+                } else {
+                    nextLevelBtn.style.display = 'inline-block';
+                    playAgainBtn.textContent = 'Mulai Baru (Level 1)';
+                }
+            }
+        }
+
+        // --- Event Listeners untuk Tombol Kontrol ---
+
+        startNewGameBtn.addEventListener('click', () => {
+            currentLevel = 0; // Kembali ke level 1 saat memulai game baru
+            startGame();
+        });
+
+        resetLevelBtn.addEventListener('click', resetCurrentLevel);
+
+        showOriginalBtn.addEventListener('click', () => {
+            originalImageContainer.style.display = 'flex';
+        });
+
+        closeOriginalBtn.addEventListener('click', () => {
+            originalImageContainer.style.display = 'none';
+        });
+
+        playAgainBtn.addEventListener('click', () => {
+            successMessage.style.display = 'none';
+            currentLevel = 0; // Kembali ke level 1
+            startGame();
+        });
+
+        nextLevelBtn.addEventListener('click', () => {
+            successMessage.style.display = 'none';
+            currentLevel++;
+            if (currentLevel < PUZZLE_IMAGES.length) {
+                startGame();
+            } else {
+                alert('Selamat! Anda telah menyelesaikan semua level!');
+                currentLevel = 0; // Kembali ke level 1 setelah semua selesai
+                startGame();
+            }
+        });
+
+        // Memulai game saat halaman dimuat
+        startGame();
+    </script>
+</body>
+</html>
